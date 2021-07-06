@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * Magento
+ *
+ * @category   RayPay
+ * @package    RayPay
+ * @copyright  Copyright (c) 2021 RayPay (https://raypay.ir)
+ */
+
+echo $this->getMethod()->getTitle() . '<br/>';
+
+if ($this->getInfo()->getLastTransId() == '') {
+	echo $this->__('Payment has not been processed yet.') . '<br/>';
+}
+else {
+	echo $this->__('RayPay Transaction ID: %s', $this->htmlEscape($this->getInfo()->getLastTransId())) . '<br/>';
+}

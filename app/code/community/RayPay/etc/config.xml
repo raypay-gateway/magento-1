@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Magento
+ *
+ * @category   RayPay
+ * @package    RayPay
+ * @copyright  Copyright (c) 2021 RayPay (https://raypay.ir)
+ */
+-->
+<config>
+	<modules>
+		<RayPay>
+			<version>1.0.0</version>
+		</RayPay>
+	</modules>
+
+    <global>
+        <models>
+            <raypay>
+                <class>RayPay_Model</class>
+            </raypay>
+        </models>
+
+        <helpers>
+            <raypay>
+                <class>RayPay_Helper</class>
+            </raypay>
+        </helpers>
+
+        <resources>
+            <raypay_setup>
+                <setup>
+                    <module>RayPay</module>
+                </setup>
+
+                <connection>
+                    <use>core_setup</use>
+                </connection>
+            </raypay_setup>
+	
+            <raypay_write>
+                <connection>
+                    <use>core_write</use>
+                </connection>
+            </raypay_write>
+	
+            <raypay_read>
+                <connection>
+                    <use>core_read</use>
+                </connection>
+            </raypay_read>
+        </resources>
+
+        <blocks>
+            <raypay>
+				<class>RayPay_Block</class>
+			</raypay>
+        </blocks>
+    </global>
+
+    <frontend>
+        <secure_url>
+            <raypay_redirect>/raypay/redirect</raypay_redirect>
+        </secure_url>	
+
+        <routers>
+            <raypay>
+                <use>standard</use>
+                <args>
+                    <module>RayPay</module>
+                    <frontName>raypay</frontName>
+                </args>
+            </raypay>
+        </routers>	
+	
+        <translate>
+            <modules>
+                <RayPay>
+                    <files>
+                        <default>RayPay.csv</default>
+                    </files>
+                </RayPay>
+            </modules>
+        </translate>	
+
+        <layout>
+            <updates>
+                <raypay>
+                    <file>raypay.xml</file>
+                </raypay>
+            </updates>
+        </layout>
+    </frontend>
+
+    <adminhtml>
+        <translate>
+            <modules>
+                <RayPay>
+                    <files>
+                        <default>RayPay.csv</default>
+                    </files>
+                </RayPay>
+            </modules>
+        </translate>
+    </adminhtml>
+
+    <default>
+        <payment>
+            <raypay>
+                <active>0</active>
+                <model>raypay/raypay</model>
+				<order_status>1</order_status>
+                <second_order_status>3</second_order_status>
+                <allowspecific>0</allowspecific>
+                <title>RayPay Online Payment</title>
+				<gateway>0</gateway>
+				<payer_Id>0</payer_Id>
+				<pgwpay_url>0</pgwpay_url>
+            </raypay>
+        </payment>
+    </default>
+	
+</config>

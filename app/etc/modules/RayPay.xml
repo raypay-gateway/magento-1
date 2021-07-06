@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<config>
+  <modules>
+    <RayPay>
+      <active>true</active>	  
+      <codePool>community</codePool>	  
+	  <depends>
+	    <Mage_Payment />
+	  </depends>	  
+	  <version>1.0.0</version>
+    </RayPay>
+  </modules>
+</config>
