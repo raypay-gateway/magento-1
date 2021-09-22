@@ -13,29 +13,32 @@ class RayPay_Block_Success extends Mage_Core_Block_Template
 	protected function _toHtml()
 	{
 		require_once Mage::getBaseDir() . DS . 'lib' . DS . 'Zend' . DS . 'Log.php';
+        $session = Mage::getSingleton('checkout/session');
 
-		$oderId = Mage::helper('core')->decrypt(Mage::getSingleton('core/session')->getOrderId());
-		Mage::getSingleton('core/session')->unsOrderId();
+        $orderId   = Mage::helper ( 'core' )->decrypt(Mage::getSingleton('core/session')->getOrderId());
+        Mage::getSingleton('core/session')->unsOrderId();
 
-		$order = new Mage_Sales_Model_Order();
+        $this->_order = new Mage_Sales_Model_Order();
+        $this->_order->loadByIncrementId($session->getLastRealOrderId());
+
+		//$order = new Mage_Sales_Model_Order();
 		$incrementId = Mage::getSingleton('checkout/session')->getLastRealOrderId();
-		$order->loadByIncrementId($incrementId);
-		$this->_paymentInst = $order->getPayment()->getMethodInstance();
-
+		//$order->loadByIncrementId($incrementId);
+        $payment = $this->_order->getPayment();
+        if ($payment != false) {
+            $this->_paymentInst = $this->_order->getPayment()->getMethodInstance();
+        }
 		$success = false;
 		$message = Mage::Helper('raypay')->getMessage();
 
-		if (isset($_GET['?invoiceID']) && isset($_GET['order_id']) ) {
-
+		if ( isset($_GET['order_id']) ) {
             $order_id = $_GET['order_id'];
-            $invoice_id = $_GET['?invoiceID'];
-            $params = array('order_id' => $order_id);
-            $result = self::common('https://api.raypay.ir/raypay/api/v1/Payment/checkInvoice?pInvoiceID=' . $invoice_id, $params);
+            $result = self::common('https://api.raypay.ir/raypay/api/v1/Payment/verify', $_POST);
 
-            if ($result->StatusCode != 200) {
+            if (empty($result->Data)) {
                 $message = Mage::Helper('raypay')->getMessage(104) . ' خطای سرور : ' . $result->Message;
             } else {
-                $state           = $result->Data->State;
+                $state           = $result->Data->Status;
                 $verify_order_id = $result->Data->FactorNumber;
                 $verify_amount   = $result->Data->Amount;
                 if (!empty($verify_order_id) && !empty($verify_amount) && $state == 1) {
@@ -52,16 +55,16 @@ class RayPay_Block_Success extends Mage_Core_Block_Template
 
 		if ($success == true) {
 
-			$invoice = $order->prepareInvoice();
+			$invoice = $this->_order->prepareInvoice();
 			$invoice->register()->capture();
 
 			Mage::getModel('core/resource_transaction')->addObject($invoice)->addObject($invoice->getOrder())->save();
 
 			$message = "پرداخت شما با موفقیت انجام شد.";
-			$order->addStatusToHistory($this->_paymentInst->getConfigData('second_order_status'), $message, true);
-			$order->save();
+            $this->_order->addStatusToHistory($this->_paymentInst->getConfigData('second_order_status'), $message, true);
+            $this->_order->save();
 
-			$order->sendNewOrderEmail();
+            $this->_order->sendNewOrderEmail();
 
 			Mage::getSingleton('core/session')->addSuccess($message);
 
@@ -72,8 +75,8 @@ class RayPay_Block_Success extends Mage_Core_Block_Template
 
 			$this->_order = Mage::getModel('sales/order')->loadByIncrementId($incrementId);
 
-			$order->addStatusToHistory(Mage_Sales_Model_Order::STATE_CANCELED, $message, true);
-			$order->save();
+            $this->_order->addStatusToHistory(Mage_Sales_Model_Order::STATE_CANCELED, $message, true);
+            $this->_order->save();
 
 			$this->_order->sendOrderUpdateEmail(true, $message);
 

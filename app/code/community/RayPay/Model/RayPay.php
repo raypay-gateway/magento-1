@@ -69,11 +69,12 @@ class RayPay_Model_raypay extends Mage_Payment_Model_Method_Abstract
 			Mage::getSingleton('core/session')->setOrderId(Mage::helper('core')->encrypt($this->getOrder()->getRealOrderId()));
 
 			$amount = intval($this->getOrder()->getGrandTotal());
-			$redirectUrl = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB) . 'index.php' . '/raypay/redirect/success'.'?order_id='. $orderId .'&';
+			$redirectUrl = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB) . 'index.php' . '/raypay/redirect/success'.'?order_id='. $orderId;
 			$description = 'پرداخت  فروشگاه مجنتو 1 با شماره سفارش ' . $orderId;
             $invoice_id             = round(microtime(true) * 1000);
             $user_id = Mage::helper('core')->decrypt($this->getConfigData('user_id'));
-            $acceptor_code = Mage::helper('core')->decrypt($this->getConfigData('acceptor_code'));
+            $marketing_id = Mage::helper('core')->decrypt($this->getConfigData('marketing_id'));
+            $sandbox 	 = (bool)$this->getConfigData('sandbox');
 
             if ($this->getOrder()->getBillingAddress()->getEmail()) {
                 $email = $this->getOrder()->getBillingAddress()->getEmail();
@@ -89,28 +90,25 @@ class RayPay_Model_raypay extends Mage_Payment_Model_Method_Abstract
                 'userID'       => $user_id,
                 'redirectUrl'  => $redirectUrl,
                 'factorNumber' => strval($orderId),
-                'acceptorCode' => $acceptor_code,
+                'marketingID' => $marketing_id,
                 'email'        => $email,
                 'mobile'       => $mobile,
                 'fullName'     => $name,
-                'comment'      => $description
+                'comment'      => $description,
+                'enableSandBox'      => $sandbox
 			);
 
-			$result = self::common('https://api.raypay.ir/raypay/api/v1/Payment/getPaymentTokenWithUserID', $params);
+			$result = self::common('https://api.raypay.ir/raypay/api/v1/Payment/pay', $params);
 
-			if ($result && isset($result->Data) && $result->StatusCode == 200) {
+			if ($result && isset($result->Data)) {
+                Mage::getSingleton('checkout/session')->addData( array('raypay_id'=> $invoice_id) );
 
-                $access_token = $result->Data->Accesstoken;
-                $terminal_id  = $result->Data->TerminalID;
-
-                echo '<p style="color:#ff0000; font:18px Tahoma; direction:rtl;">در حال اتصال به درگاه بانکی. لطفا صبر کنید ...</p>';
-                echo '<form name="frmRayPayPayment" method="post" action=" https://mabna.shaparak.ir:8080/Pay ">';
-                echo '<input type="hidden" name="TerminalID" value="' . $terminal_id . '" />';
-                echo '<input type="hidden" name="token" value="' . $access_token . '" />';
-                echo '<input class="submit" type="submit" value="پرداخت" /></form>';
-                echo '<script>document.frmRayPayPayment.submit();</script>';
-
-                exit();
+                $status = $this->getConfigData ('order_status');
+                if( !empty($status) ){
+                    $this->getOrder ();
+                    $this->_order->setStatus( $status );
+                    $this->_order->save ();
+                }
 			}
 			else {
 				$message = Mage::Helper('raypay')->getMessage(101);

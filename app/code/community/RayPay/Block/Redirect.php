@@ -15,15 +15,13 @@ class RayPay_Block_Redirect extends Mage_Core_Block_Abstract
 		$module = 'raypay';
 		$payment = $this->getOrder()->getPayment()->getMethodInstance();
 		$res = $payment->getUrl();
-
-		if ($res->StatusCode == 200) {
-
-
-			$html = '<html><body> <script type="text/javascript"> window.location = "" </script> </body></html>';
-		}
-		else {
-			$html = '<html><body> <script type="text/javascript"> window.location = "' . Mage::getUrl('checkout/onepage/failure', array('_secure' => true)) . '" </script> </body></html>';
-		}
+        if( !empty( $res->Data ) ) {
+            error_log( 'Token' . $res->Data );
+            $link ='https://my.raypay.ir/ipg?token=' .  $res->Data;
+            $html = '<html><body> <script type="text/javascript"> window.location = "'. $link . '"</script> </body></html>';
+        }else{
+            $html = '<html><body> <script type="text/javascript"> window.location = "' . Mage::getUrl ( 'checkout/onepage/failure', array ('_secure' => true) ) . '" </script> </body></html>';
+        }
 		return $html;
 	}
 }
